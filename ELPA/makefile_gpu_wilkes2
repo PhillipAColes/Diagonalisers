@@ -9,10 +9,10 @@ exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
 
-LIB= -L${libdir} -lelpa_openmp -lcudart -lcublas  -L/lib/intel64 -lmkl_scalapack_lp64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_blacs_intelmpi_lp64 -lpthread -lm -Wl,-rpath,/lib/intel64 -fopenmp
+LIB= -L${libdir} -lelpa -lcudart -lcublas -lmkl_scalapack_lp64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_blacs_intelmpi_lp64 -lpthread -lm 
 
-CFLAGS= -I${includedir}/elpa_openmp-2019.05.001 -fopenmp
-FCFLAGS= -I${includedir}/elpa_openmp-2019.05.001/modules -L/lib/intel64 -lmkl_scalapack_lp64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_blacs_intelmpi_lp64 -lpthread -lm -I/include/intel64/lp64 -fopenmp
+CFLAGS= -I${includedir}/elpa-2019.05.001 -qopenmp
+FCFLAGS= -I${includedir}/elpa-2019.05.001/modules
 
 default:   diag$(PLAT).x
 

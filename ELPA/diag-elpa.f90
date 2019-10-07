@@ -8,16 +8,16 @@
 ! 'call e%set("gpu",0,info)'. CPUs are default so this can also be commented out.
 ! In order to use the 2stage ELPA solver on GPUs the kernel must be set by
 ! 'call e%set("real_kernel",elpa_2stage_real_gpu,info)'. Check to see what kernels
-! have been built in by running the 'elpa2_print_kernels_openmp' executable
+! have been built in by running the 'elpa2_print_kernels_openmp' executable.
+!
+! Notes:
+! 1) ELPA2 GPU only works for a block size of 128. Reason unknown.
+! 2) kernel must be set AFTER solver
 ! 
 ! KNOWN BUGS: 
-! 1) currently elpa1 yields crazy eigenvalues when >20 nodes are used
+! 1) currently elpa1 yields incorrect eigenvalues when >20 nodes are used
 !    for a matrix of dimension greater than 200,000. If the number of
-!    nodes is REDUCED then elpa1 works fine. elpa2 always seems to work.
-! 2) elpa1 yields crazy eigenvalues IF the matrix has off-diagonal elements.
-!    If the matrix is already diagonal then the diagonaliser works fine (!?)
-! 3) not really a bug... but currently the elpa2 GPU kernel has not been built
-!    so elpa2 cannot be used on GPUs.
+!    nodes is REDUCED then elpa1 works fine. No such problem with elpa2.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -93,8 +93,8 @@ double precision::t1,t2
 
    write(*,"(/'mpi communicator: ', i10,', number of processes: ', i5,', process number: ',i5,',at coordinate (nprow,npcol) = (',i4,',',i4,')')")mpi_comm_world,nprocs,mypnum,myprow,mypcol
    
-   dimen_s = 64 !global matrix dimension
-   nb = 32 !block number
+   dimen_s = 256 !global matrix dimension
+   nb = 128 !block number
    neigenvals = dimen_s !number of eigenvalues we want to compute
 
    loc_r = numroc(dimen_s,nb,myprow,0,nprow)!essentially number of rows of submatrix (i.e. number of rows of local array owned by process)
@@ -205,7 +205,7 @@ enddo
    call e%set("process_col",mypcol,info)
    
 !are we using GPUs? 1 = yes, 0 = no
-   call e%set("gpu",0,info)
+   call e%set("gpu",1,info)
    if(info/=elpa_ok)then
      errormsg = elpa_strerr(info)
      if(mypnum==0)print*,'setting up ELPA GPU, errormsg = ',errormsg
@@ -220,20 +220,21 @@ enddo
 !   call e%get("real_kernel",18,info)
 !   if(mypnum==0)print*,elpa_int_value_to_string("real_kernel",18,info)
 
-!   if(mypnum==0)print*,'now attempted to setup gpu kernel...'
-!   call e%set("real_kernel",elpa_2stage_real_gpu,info)
-!   errormsg = elpa_strerr(info)
-!   if(mypnum==0)print*,'errormsg = ',errormsg
-
 
    info = e%setup()
    if(mypnum==0)print*,'attempted to setup elpa... info = ',info
 
 
 !the solver type
-   call e%set("solver",elpa_solver_1stage,info)!1stage
-!   call e%set("solver",elpa_solver_2stage,info)!2stage
+!   call e%set("solver",elpa_solver_1stage,info)!1stage
+   call e%set("solver",elpa_solver_2stage,info)!2stage
    
+
+! Set up kernel _after_ solver
+   if(mypnum==0)print*,'now attempted to setup gpu kernel...'
+   call e%set("real_kernel",elpa_2stage_real_gpu,info)
+   errormsg = elpa_strerr(info)
+   if(mypnum==0)print*,'errormsg = ',errormsg
 
 
    call mpi_barrier(mpi_comm_world,mpierr)
