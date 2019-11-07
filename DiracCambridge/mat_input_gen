@@ -1,0 +1,5 @@
+diagonaliser elpa
+matrix gen 8000
+zpe 0.0
+eigenvects
+neigenvals 2000
