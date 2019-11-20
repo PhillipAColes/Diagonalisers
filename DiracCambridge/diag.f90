@@ -340,7 +340,8 @@ integer::chkptIO=30,e_chkptIO=40
       case(2)
       !
       !
-      if (mypnum == 0)write(*,"(/'Global matrix has dimension',i5)")dimen_s
+      call blacs_barrier(ctxt, 'a')
+      if (mypnum == 0)write(*,"(/'User has selected to generate pseudo-random matrix with dimension',i7)")dimen_s
       !
       nb = 64!block number (dimension that constitute a block, e.g., for nb=64, a block is 64x64 elements)
       loc_r = numroc(dimen_s,nb,myprow,0,nprow)!essentially number of rows of submatrix (i.e. number of rows of local array owned by process)
@@ -354,6 +355,10 @@ integer::chkptIO=30,e_chkptIO=40
       write(*,"(/'Allocating local matrix a, with dimension (',i5,'x',i5,') Belonging to process ',i4,' at coord (',i4,',',i4')')") loc_r,loc_c,mypnum,myprow,mypcol
       allocate(aloc(loc_r,loc_c),a_temp(dimen_s))
       allocate(zloc(loc_r,loc_c),w(dimen_s))
+      !
+      !
+      call blacs_barrier(ctxt, 'a')
+      t1 = MPI_Wtime()
       !
    !create array of pseudo-random numbers with which we use to fill matrix
       do i = 1, dimen_s
@@ -397,10 +402,12 @@ integer::chkptIO=30,e_chkptIO=40
       !
       !
       !
-   call blacs_barrier(ctxt, 'a')
-   if (mypnum == 0)write(*,"(/'Matrix generation completed')")
-   !
-   !
+      call blacs_barrier(ctxt, 'a')
+      t2 = MPI_Wtime()
+      if (mypnum == 0)write(*,"(/'Matrix generation completed')")
+      if(mypnum == 0)write(*,"(/'Time taken to generate matrix is ', f12.6,' secs')")t2-t1
+      !
+      !
    case default
    !
    write(*, '(/a)') 'error: no matrix specified'
